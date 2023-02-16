@@ -15,15 +15,42 @@ var padding = { top: 20, right: 40, bottom: 0, left: 0 },
     picked = 100000,
     oldpick = [];
 
-d3.json("./incidents/general_incidents.json", function (error, data) {
+d3.json("./people/on_callers.json", function (error, data) {
     if (error) throw error;
     var svg = d3.select("#wheel")
         .append("svg")
         .data([data])
         .attr("viewBox", "0 0 500 500");
 
+    //Container for the gradients
+    var defs = svg.append("defs");
+
+    // Start container gradients
+    createGradients = function (defs, colors, r) {
+        var gradient = defs.selectAll('.gradient')
+            .data(colors).enter().append("radialGradient")
+            .attr("id", function (d, i) { return "gradient" + i; })
+            .attr("gradientUnits", "userSpaceOnUse")
+            .attr("cx", "0").attr("cy", "0").attr("r", r).attr("spreadMethod", "pad");
+
+        gradient.append("stop").attr("offset", "0%").attr("stop-color", function (d) { return d; });
+
+        gradient.append("stop").attr("offset", "30%")
+            .attr("stop-color", function (d) { return d; })
+            .attr("stop-opacity", 1);
+
+        gradient.append("stop").attr("offset", "70%")
+            .attr("stop-color", function (d) { return "black"; })
+            .attr("stop-opacity", 1);
+    }
+
+    // End container gradient
+
     var container = svg.append("g")
         .attr("transform", "translate(" + (w / 2 + padding.left) + "," + (h / 2 + padding.top) + ")");
+
+    createGradients(container.append("defs"), data.map(function (d, i) { return custom_colors(i); }), 2.5 * r);
+
 
     var vis = container
         .append("g");
@@ -42,7 +69,8 @@ d3.json("./incidents/general_incidents.json", function (error, data) {
 
 
     arcs.append("path")
-        .attr("fill", function (d, i) { return custom_colors(i); })
+        //.attr("fill", function (d, i) { return custom_colors(i); })
+        .attr("fill", function (d, i) { return "url(#gradient" + i + ")"; })
         .attr("d", function (d) { return arc(d); });
 
     // add the text
@@ -54,9 +82,11 @@ d3.json("./incidents/general_incidents.json", function (error, data) {
     })
         .attr("text-anchor", "end")
         .text(function (d, i) {
-            return data[i].title;
+            return data[i].name;
         });
+
     container.on("click", spin);
+
 
     function spin(d) {
         container.on("click", null);
@@ -86,20 +116,22 @@ d3.json("./incidents/general_incidents.json", function (error, data) {
             .duration(3000)
             .attrTween("transform", rotTween)
             .each("end", function () {
-                //mark incident as seen
+                //mark name as seen
                 d3.select(".slice:nth-child(" + (picked + 1) + ") path")
                     .attr("fill", "#111");
+                d3.select(".slice:nth-child(" + (picked + 1) + ") text")
+                    .attr("fill", "#fff");
                 // if Ink story is provided, override the actual scenario.
                 if (data[picked].inkstory != undefined) {
-                    //populate incident
-                    d3.select("#incident p")
-                        .html("<h4 class=\"f4 center mw6\">" + data[picked].title + "</h4>" + "<div id=\"play-area\"> <ol id =\"choices\"><ol></div>");
+                    //populate names
+                    d3.select("#name p")
+                        .html("<h4 class=\"f4 center mw6\">" + data[picked].name + "</h4>" + "<div id=\"play-area\"> <ol id =\"choices\"><ol></div>");
                     container.on("click", spin, stopwatch.reset(), stopwatch.start(), changeControls(), loadStory(data[picked].inkstory));
-                   } else {
-                    //populate incident
-                    d3.select("#incident p")
-                        .html("<h4 class=\"f4 center mw6\">" + data[picked].title + "</h4>" + data[picked].scenario);
-                    container.on("click", spin, stopwatch.reset(), stopwatch.start(), changeControls());
+                } else {
+                    //populate names
+                    d3.select("#name p")
+                        .html("<h4 class=\"f4 center mw6\">" + data[picked].name + "</h4>");
+                    container.on("click", spin, stopwatch.reset(), stopwatch.start(), changeControls(ns));
                 }
                 oldrotation = rotation;
             });
