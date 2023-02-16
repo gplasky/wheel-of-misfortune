@@ -131,7 +131,7 @@ d3.json("./people/on_callers.json", function (error, data) {
                     //populate names
                     d3.select("#name p")
                         .html("<h4 class=\"f4 center mw6\">" + data[picked].name + "</h4>");
-                    container.on("click", spin, stopwatch.reset(), stopwatch.start(), changeControls(ns));
+                    container.on("click", spin, stopwatch.reset(), stopwatch.start(), changeControls());
                 }
                 oldrotation = rotation;
             });
