@@ -6,6 +6,8 @@ function custom_colors(n) {
     return colors[n % colors.length];
 }
 
+var clicked = false;
+
 var padding = { top: 20, right: 40, bottom: 0, left: 0 },
     w = 500 - padding.left - padding.right,
     h = 500 - padding.top - padding.bottom,
@@ -55,10 +57,10 @@ d3.json("./people/on_callers.json", function (error, data) {
     var vis = container
         .append("g");
 
-    var pie = d3.layout.pie().sort(null).value(function (d) { return 1; });
+    var pie = d3.pie().sort(null).value(function (d) { return 1; });
 
     // declare an arc generator function
-    var arc = d3.svg.arc().outerRadius(r);
+    var arc = d3.arc().outerRadius(r).innerRadius(0);
 
     // select paths, use arc generator to draw
     var arcs = vis.selectAll("g.slice")
@@ -87,8 +89,23 @@ d3.json("./people/on_callers.json", function (error, data) {
 
     container.on("click", spin);
 
+    function spinText() {
+        if (clicked == false) {
+            console.log("spinText fired.")
+            return "SPIN"
+        } else {
+            console.log("spinText fired - disable.")
+
+            d3.select(this)
+                .text("RESET")
+            container.on("click", null);
+            return
+        }
+    }
 
     function spin(d) {
+
+        clicked = true;
         container.on("click", null);
         //all slices have been seen, all done
         if (oldpick.length == data.length) {
@@ -131,7 +148,7 @@ d3.json("./people/on_callers.json", function (error, data) {
                     //populate names
                     d3.select("#name p")
                         .html("<h4 class=\"f4 center mw6\">" + data[picked].name + "</h4>");
-                    container.on("click", spin, stopwatch.reset(), stopwatch.start(), changeControls());
+                    container.on("click", spin, stopwatch.reset(), stopwatch.start(), changeControls(), spinText());
                 }
                 oldrotation = rotation;
             });
@@ -155,9 +172,14 @@ d3.json("./people/on_callers.json", function (error, data) {
     container.append("text")
         .attr("x", 0)
         .attr("y", 10)
+        .attr("id", "spin")
         .attr("text-anchor", "middle")
-        .text("SPIN")
-        .style({ "color": "white", "font-weight": "bold", "font-size": "18px" });
+        .style({ "color": "white", "font-weight": "bold", "font-size": "18px" })
+        .text(spinText)
+    /*.on("click", function (d) {
+        d3.select(this)
+            .text("RESET")
+    });*/
 
     function rotTween(to) {
         var i = d3.interpolate(oldrotation % 360, rotation);
